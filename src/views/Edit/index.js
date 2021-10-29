@@ -13,8 +13,12 @@ import {
   TextArea,
 } from "native-base";
 import * as ImagePicker from "expo-image-picker";
-const Formulario = () => {
-  const initialState = { btnGuardar: true };
+const Formulario = (props) => {
+  const initialState = {
+    btnGuardar: true,
+    btnEliminar:true,
+    titulo: props.route.params.item.titulo,
+  };
 
   const toast = useToast();
   const [formData, setData] = useState(initialState);
@@ -86,6 +90,7 @@ const Formulario = () => {
       });
     }
   };
+
   const pickIcon = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -97,6 +102,7 @@ const Formulario = () => {
     console.log(result);
 
     if (!result.cancelled) {
+      console.log(result.uri);
       setIcon(result.uri);
       let localUri = result.uri;
       let filename = localUri.split("/").pop();
@@ -115,6 +121,32 @@ const Formulario = () => {
   };
 
   useEffect(() => {
+    setIcon(
+      "http://localhost/webservice/imagenes/iconos/" +
+        props.route.params.item.icono
+    );
+    setImage(
+      "http://localhost/webservice/imagenes/sitios/" +
+        props.route.params.item.imagenportada
+    );
+    setData({
+      ...formData,
+      id: props.route.params.item.id,
+      btnIcono: {
+        uri: "f",
+        name: "f",
+      },
+      btnPortada: {
+        uri: "f",
+        name: "f",
+      },
+      titulo: props.route.params.item.titulo,
+      descripcion: props.route.params.item.descripcion,
+      introduccion: props.route.params.item.introduccion,
+    });
+  }, []);
+
+  useEffect(() => {
     (async () => {
       if (Platform.OS !== "web") {
         const { status } =
@@ -128,19 +160,18 @@ const Formulario = () => {
       }
     })();
   }, []);
+
   const onSubmit = () => {
+      
     console.log(formData);
     validate()
       ? axios
-          .post(
-            `http://localhost/webservice/formularios/registro.php`,
-            formData
-          )
+          .post(`http://localhost/webservice/formularios/edit.php`, formData)
           .then((response) => {
-            setData(initialState);
             toast.show({
-              description: "Se agrego correctamente",
+              description: "Se edito correctamente",
             });
+            props.navigation.navigate('Home')
           })
           .catch((err) => {
             console.log(err);
@@ -150,6 +181,27 @@ const Formulario = () => {
           })
       : console.log("Invalido");
   };
+
+  const onDelete = () => {
+      let id = formData.id;
+      let btn = formData.btnEliminar;
+      console.log(parseInt(id))
+    axios
+      .post(`http://localhost/webservice/formularios/delete.php`, {id:parseInt(id), btnEliminar:btn})
+      .then((response) => {
+        toast.show({
+          description: "Eliminado Correctamente",
+        });
+        props.navigation.navigate('Home')
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.show({
+          description: "Ocurrio un error.",
+        });
+      });
+  };
+
   return (
     <VStack width="90%" mx="3">
       <Heading textAling="center">Turismo</Heading>
@@ -167,6 +219,7 @@ const Formulario = () => {
         <Input
           placeholder="Titulo"
           onChangeText={(value) => setData({ ...formData, titulo: value })}
+          defaultValue={formData.titulo}
         />
         {"titulo" in errors ? (
           <FormControl.ErrorMessage
@@ -181,10 +234,11 @@ const Formulario = () => {
           Introduccion
         </FormControl.Label>
         <Input
-          placeholder="Titulo"
+          placeholder="Introduccion"
           onChangeText={(value) =>
             setData({ ...formData, introduccion: value })
           }
+          defaultValue={formData.introduccion}
         />
         {"introduccion" in errors ? (
           <FormControl.ErrorMessage
@@ -201,6 +255,7 @@ const Formulario = () => {
         <TextArea
           placeholder="Descripcion"
           onChangeText={(value) => setData({ ...formData, descripcion: value })}
+          defaultValue={formData.descripcion}
         />
         {"descripcion" in errors ? (
           <FormControl.ErrorMessage
@@ -245,7 +300,10 @@ const Formulario = () => {
         )}
       </FormControl>
       <Button onPress={onSubmit} mt="5" colorScheme="cyan">
-        Agregar
+        Editar
+      </Button>
+      <Button mt="5" onPress={onDelete} colorScheme="secondary">
+        Eliminar
       </Button>
     </VStack>
   );

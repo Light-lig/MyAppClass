@@ -6,7 +6,7 @@ const useData = () =>{
     const [data, setData] = useState([]);
     
     useFocusEffect(  React.useCallback(()=>{
-         axios.get('http://127.0.0.1:8080/webservice/').then((response)=>{
+         axios.get('http://localhost/webservice/').then((response)=>{
             setData(response.data.items);
         }).catch((err)=>{
             setData([]);
